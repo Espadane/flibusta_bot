@@ -53,12 +53,12 @@ class Catalog:
             os.remove(catalog_arch)
             logger.debug('Zip архив удален')
 
-    def search_query(self):
+    async def search_query(self, query):
         """Поиск кинг по запросу пользователя
         """
         answer = []
         try:
-            words = self.query.split(' ')
+            words = query.split(' ')
             with open("./files/catalog.txt", "r") as file:
                 for line in file:
                     for i in range(0, len(words)):
@@ -71,11 +71,12 @@ class Catalog:
             logger.debug(
                 f'Запрос выполнен успешно. Количество строк ответа {len(clear_answer)}')
         except Exception as error:
+            clear_answer = []
             logger.warning(f'Не удалось выполнить запрос.\nОшибка: {error}')
 
         return clear_answer
 
-    async def get_book_response(self, random_book=None):
+    async def get_book_response(self, query,random_book=None):
         """Собираем ответ пользователя в словарь и отдаем пользователю.
 
         Args:
@@ -86,7 +87,7 @@ class Catalog:
         """
         books = []
         if random_book == None:
-            response = self.search_query(query=query)
+            response = await self.search_query(query)
         else:
             response = random_book
         for book in response:
@@ -143,11 +144,14 @@ class Catalog:
                     html = await response.text()
 
             soup = BeautifulSoup(html, 'lxml')
-            summary = soup.find('h2').find_next()
+            summary = soup.find('h2').find_next().text
+            if 'поиск' in summary:
+                summary = 'отсутствует'
             logger.debug(
                 f'Удалось получить информацию о книге по ссылке: {book_url}')
         except Exception as error:
+            summary  = ''
             logger.warning(
                 f'Не удалось получить инфо о книге.\nURL =  {book_url}.\nОшибка: {error}')
 
-        return summary.text
+        return summary

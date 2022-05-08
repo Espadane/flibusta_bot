@@ -91,7 +91,7 @@ async def get_search_query(msg: types.Message):
         except:
             pass
         logger.debug(f'Файл: {user_id}_query.json удален')
-    books = await catalog.get_book_response(query=query)
+    books = await catalog.get_book_response(query)
     await search_result_forming(user_id, books)
 
 
@@ -346,5 +346,3 @@ async def on_startup(_):
 if __name__ == '__main__':
 
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
-
-# TODO в переменную окружения путь до папки сохранения епаб книжек
