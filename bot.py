@@ -91,7 +91,7 @@ async def get_search_query(msg: types.Message):
         except:
             pass
         logger.debug(f'Файл: {user_id}_query.json удален')
-    books = await catalog.get_book_response(query)
+    books = await catalog.get_book_response(query=query, random_book=None)
     await search_result_forming(user_id, books)
 
 
