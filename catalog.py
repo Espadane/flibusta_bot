@@ -76,7 +76,7 @@ class Catalog:
 
         return clear_answer
 
-    async def get_book_response(self, query,random_book=None):
+    async def get_book_response(self, query, random_book):
         """Собираем ответ пользователя в словарь и отдаем пользователю.
 
         Args:
@@ -125,8 +125,8 @@ class Catalog:
             data = file.readlines()
 
         random_book = [data[random.randint(1, len(data))]]
-        book_data = await self.get_book_response(random_book)
-
+        book_data = await self.get_book_response(query=None, random_book=random_book)
+        
         return book_data
 
     async def get_book_summary(self, book_url):
