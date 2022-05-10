@@ -100,7 +100,7 @@ class Catalog:
             book_year = book_data[6]
             book_series = book_data[7]
             book_link = f'https://www.flibusta.site/b/{book_data[8]}'
-            book_summary = await self.get_book_summary(book_link)
+            book_summary = ''
             books.append({
                 'book_author_fn': book_author_fn.strip(),
                 'book_author_ln': book_author_ln.strip(),

@@ -29,20 +29,23 @@ class PdfConverter:
                 f'Не получилось достучаться до страницы книги: {book_name}\n{book_link}.\n{self.response.status_code}\nОшибка: {error}')
         soup = BeautifulSoup(response.text, 'lxml')
         book = soup.find_all(class_='book')
-        if not os.path.exists(f'./files/{self.book_name}'):
-            os.mkdir(f'./files/{self.book_name}')
-        with open(f'./files/{self.book_name}/{self.book_name}.html', 'a') as file:
-            file.write(
-                f'<head><meta charset="UTF-8">\n<title>{self.book_name}</title></head>')
-        for i in book:
+        if book != []:
+            if not os.path.exists(f'./files/{self.book_name}'):
+                os.mkdir(f'./files/{self.book_name}')
             with open(f'./files/{self.book_name}/{self.book_name}.html', 'a') as file:
-                file.write(str(i))
-        try:
-            weasyprint.HTML(
-                filename=f'./files/{self.book_name}/{self.book_name}.html').write_pdf(f'./files/{self.book_name}.pdf')
-        except Exception as error:
-            logger.warning(
-                f'Не удалось сделать PDF.\nКнига: {self.book_read_link}\nОшибка: {error}')
-        shutil.rmtree(f'./files/{self.book_name}')
+                file.write(
+                    f'<head><meta charset="UTF-8">\n<title>{self.book_name}</title></head>')
+            for i in book:
+                with open(f'./files/{self.book_name}/{self.book_name}.html', 'a') as file:
+                    file.write(str(i))
+            try:
+                weasyprint.HTML(
+                    filename=f'./files/{self.book_name}/{self.book_name}.html').write_pdf(f'./files/{self.book_name}.pdf')
+            except Exception as error:
+                logger.warning(
+                    f'Не удалось сделать PDF.\nКнига: {self.book_read_link}\nОшибка: {error}')
+            shutil.rmtree(f'./files/{self.book_name}')
+        else:
+            self.book_name = None
 
         return self.book_name

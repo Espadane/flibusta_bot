@@ -9,6 +9,7 @@ from flibusta_logger import logger
 import json
 import asyncio
 import os
+import shutil
 import aioschedule
 
 catalog = Catalog()
@@ -46,7 +47,6 @@ async def news_feed(msg: types.Message):
     Args:
         msg (types.Message): команда /news
     """
-    await bot.delete_message(chat_id=msg.from_user.id, message_id=msg.message_id)
     btn_9 = InlineKeyboardButton('09:00', callback_data=f'feed\n09:00')
     btn_14 = InlineKeyboardButton('14:00', callback_data=f'feed\n14:00')
     btn_18 = InlineKeyboardButton('18:00', callback_data=f'feed\n18:00')
@@ -66,7 +66,6 @@ async def random_book(msg: types.Message):
     Args:
         msg (types.Message): команда /random
     """
-    await bot.delete_message(chat_id=msg.from_user.id, message_id=msg.message_id)
     user_id = msg.from_user.id
     random_book = await catalog.random_book()
     await msg.answer('Вот вам что почитать случайного: ')
@@ -84,12 +83,6 @@ async def get_search_query(msg: types.Message):
     query = msg.text
     if os.path.exists(f'./files/{user_id}_query.json'):
         os.remove(f'./files/{user_id}_query.json')
-        try:
-            # если пользователь что-то уже спрашивал удалеем прошлый запрос
-            for i in range(0, 5):
-                await bot.delete_message(chat_id=msg.from_user.id, message_id=msg.message_id - i)
-        except:
-            pass
         logger.debug(f'Файл: {user_id}_query.json удален')
     books = await catalog.get_book_response(query=query, random_book=None)
     await search_result_forming(user_id, books)
@@ -176,8 +169,8 @@ async def show_book(user_id, books, index, book_source):
         book_summary = book['book_summary']
     except:
         book_summary = 'Придется прочитать'
-    # опять таки ограничение телеграм, поэтому используется только первое слово из названия книги
-    short_book_name = book_name.split(' ')[0]
+    # опять таки ограничение телеграм, поэтому используется только первое слово из названия книги с ограничением до 10 символов
+    short_book_name = book_name.split(' ')[0][:10]
     short_book_name = short_book_name.replace('.', '').replace(',', '')
     btn_next = InlineKeyboardButton(
         f'Книга ➡', callback_data=f'next\n{index}\n{book_source}')
@@ -201,7 +194,7 @@ async def show_book(user_id, books, index, book_source):
     menu = InlineKeyboardMarkup().add(*buttons)
     menu.add(btn_download_epub, btn_download_pdf)
     if book_source == 'query':
-        await bot.send_message(user_id, f'Найденые книги {index + 1} из {len(books)}\n\nАвтор: {author}\nНазвание: {book_name}\nСерия: {book_series}\nГод: {book_year} Язык: {book_lang}\nОписание: {book_summary}\n<a href="{book_link}">Посмотреть на сайте</a>', reply_markup=menu, parse_mode='HTML')
+        await bot.send_message(user_id, f'Найденые книги {index + 1} из {len(books)}\n\nАвтор: {author}\nНазвание: {book_name}\nСерия: {book_series}\nГод: {book_year} Язык: {book_lang}\n<a href="{book_link}">Посмотреть на сайте</a>', reply_markup=menu, parse_mode='HTML')
     elif book_source == 'new':
         await bot.send_message(user_id, f'Новые книги на сайте {index + 1} из {len(books)}\n\nНазвание: {book_name}\nОписание: {book_summary}\n<a href="{book_link}">Посмотреть на сайте</a>', reply_markup=menu, parse_mode='HTML')
 
@@ -258,11 +251,15 @@ async def download_epub(callback_query: types.CallbackQuery):
         book_name = epub_converter.make_epub(
             short_book_name=book_name, book_link=book_link)
         await bot.send_document(chat_id=user_id, document=open(f'./files/{book_name}.epub', 'rb'))
-        os.remove(f'./files/{book_name}.epub')
     except Exception as error:
         logger.warning(
             f'Что то пошло не так с конвертацией EPUB и отправки пользователю. Данные:\nСсылка на неполучившуюся книгу:{book_link}\nНазвание книги: {book_name}\nАйди пользователя: {user_id}\nОшибка: {error}')
-        await bot.send_message(user_id, 'Извините что-то пошло не так. Мы работаем над проблемой. Попробуйте позже.')
+        await bot.send_message(user_id, 'Извините что-то пошло не так. Мы работаем над проблемой.')
+    try:
+        os.remove(f'./files/{book_name}.epub')
+    except:
+        shutil.rmtree(f'./files/{book_name}/')
+        await bot.send_message(user_id, 'Похоже книга не доступна на сайте для скачивания. Попробуйте поискать другой вариант этой книги.')
 
 
 @dp.callback_query_handler(lambda c: 'pdf' in c.data)
@@ -280,12 +277,15 @@ async def download_pdf(callback_query: types.CallbackQuery):
     try:
         book_name = pdf_converter.make_pdf(
             book_name=book_name, book_link=book_link)
+        if book_name == None:
+            await bot.send_message(user_id, 'К сожалению эта книга не доступна на сайте для скачивания. Поищите другую версию.')
         await bot.send_document(chat_id=user_id, document=open(f'./files/{book_name}.pdf', 'rb'))
         os.remove(f'./files/{book_name}.pdf')
     except Exception as error:
         logger.warning(
             f'Что то пошло не так с конвертацией PDF и отправки пользователю. Данные:\nСсылка на неполучившуюся книгу:{book_link}\nНазвание книги: {book_name}\nАйди пользователя: {user_id}\nОшибка: {error}')
-        await bot.send_message(user_id, 'Извините что-то пошло не так. Мы работаем над проблемой. Попробуйте позже.')
+    await bot.send_message(user_id, 'Извините что-то пошло не так. Мы работаем над проблемой.')
+    os.remove(f'./files/{book_name}.epub')
 
 
 @dp.callback_query_handler(lambda c: 'feed' in c.data)
