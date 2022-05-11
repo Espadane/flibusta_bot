@@ -69,7 +69,7 @@ async def random_book(msg: types.Message):
     user_id = msg.from_user.id
     random_book = await catalog.random_book()
     await msg.answer('Вот вам что почитать случайного: ')
-    await show_book(user_id=user_id, books=random_book, index=0, book_source='query')
+    await show_book(user_id=user_id, books=random_book, index=0, book_source='random')
 
 
 @dp.message_handler(Text)
@@ -195,7 +195,7 @@ async def show_book(user_id, books, index, book_source):
     menu.add(btn_download_epub, btn_download_pdf)
     if book_source == 'query':
         await bot.send_message(user_id, f'Найденые книги {index + 1} из {len(books)}\n\nАвтор: {author}\nНазвание: {book_name}\nСерия: {book_series}\nГод: {book_year} Язык: {book_lang}\n<a href="{book_link}">Посмотреть на сайте</a>', reply_markup=menu, parse_mode='HTML')
-    elif book_source == 'new':
+    elif book_source == 'new' or book_source == 'random':
         await bot.send_message(user_id, f'Новые книги на сайте {index + 1} из {len(books)}\n\nНазвание: {book_name}\nОписание: {book_summary}\n<a href="{book_link}">Посмотреть на сайте</a>', reply_markup=menu, parse_mode='HTML')
 
 
