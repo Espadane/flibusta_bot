@@ -9,10 +9,9 @@
 ## [Работающая версия](https://t.me/book_brotherhood_bot)  
 ## Для запуска:
 - ```git clone https://github.com/Espadane/flibusta_bot```
-- Требуется установка weasyprint [Ссылка на инструкцию под разные системы](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation)
 - ```pip install -r requirements.txt```
 - Добавить в виртуальное окружение переменную FLIBUSTA_BOT_TOKEN с вашим токеном
-- В файле epub_converter прописать абсолютный путь до бота в переменную path_to_epub (библиотека для конвертирования не понимает относительные пути)
+- В файле epub_converter прописать абсолютный путь до бота папка 'files' в переменную path_to_epub (библиотека для конвертирования не понимает относительные пути)
 - По желанию в файле библиотеки /html2epub/epub_templates/toc.html заменить ```<title>目录</title>``` и  ```<h2>目录</h2>``` на "Содержание". Отвечает за надпись "Содержание" в оглавлении сконвертированных книг
 - Запустить бот командой python3 bot.py
 
